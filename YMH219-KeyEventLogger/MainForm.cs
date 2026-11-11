@@ -23,6 +23,9 @@ public class MainForm : Form
         ForeColor = Color.White,
         Margin = new Padding(16, 3, 3, 3)
     };
+    private readonly CheckBox keyDownCheck = CreateKindCheck("KeyDown");
+    private readonly CheckBox keyUpCheck = CreateKindCheck("KeyUp");
+    private readonly CheckBox keyPressCheck = CreateKindCheck("KeyPress");
     private readonly ListBox logList = new()
     {
         Dock = DockStyle.Fill,
@@ -60,6 +63,19 @@ public class MainForm : Form
         };
         toolbar.Controls.AddRange(new Control[] { startButton, stopButton, clearButton, saveButton, recordingIndicator });
 
+        var optionsBar = new FlowLayoutPanel
+        {
+            Dock = DockStyle.Top,
+            AutoSize = true,
+            WrapContents = false,
+            Padding = new Padding(8, 0, 8, 4)
+        };
+        var optionsLabel = new Label { Text = "Kaydedilecek olaylar:", AutoSize = true, Margin = new Padding(3, 6, 8, 3) };
+        optionsBar.Controls.AddRange(new Control[] { optionsLabel, keyDownCheck, keyUpCheck, keyPressCheck });
+        keyDownCheck.Checked = recorder.IsKindEnabled(KeyEventKind.KeyDown);
+        keyUpCheck.Checked = recorder.IsKindEnabled(KeyEventKind.KeyUp);
+        keyPressCheck.Checked = recorder.IsKindEnabled(KeyEventKind.KeyPress);
+
         var logGroup = new GroupBox { Text = "Kayıtlar", Dock = DockStyle.Fill, Padding = new Padding(8) };
         logGroup.Controls.Add(logList);
 
@@ -76,18 +92,24 @@ public class MainForm : Form
 
         Controls.Add(logGroup);
         Controls.Add(inputGroup);
+        Controls.Add(optionsBar);
         Controls.Add(toolbar);
         Controls.Add(statusStrip);
 
         startButton.Click += (_, _) => { recorder.Start(); FocusInput(); };
         stopButton.Click += (_, _) => { recorder.Stop(); FocusInput(); };
         clearButton.Click += (_, _) => { recorder.Clear(); FocusInput(); };
+        BindKindCheck(keyDownCheck, KeyEventKind.KeyDown);
+        BindKindCheck(keyUpCheck, KeyEventKind.KeyUp);
+        BindKindCheck(keyPressCheck, KeyEventKind.KeyPress);
 
         recorder.EntryAdded += Recorder_EntryAdded;
         recorder.EntriesCleared += (_, _) => { logList.Items.Clear(); UpdateCount(); };
         recorder.RecordingChanged += (_, _) => UpdateRecordingState();
 
         KeyDown += MainForm_KeyDown;
+        KeyUp += MainForm_KeyUp;
+        KeyPress += MainForm_KeyPress;
         Activated += (_, _) => UpdateFocusState(true);
         Deactivate += (_, _) => UpdateFocusState(false);
         Shown += (_, _) => FocusInput();
@@ -100,6 +122,25 @@ public class MainForm : Form
     private void MainForm_KeyDown(object? sender, KeyEventArgs e)
     {
         recorder.TryRecord(KeyLogEntry.FromKeyEvent(KeyEventKind.KeyDown, e, DateTime.Now));
+    }
+
+    private void MainForm_KeyUp(object? sender, KeyEventArgs e)
+    {
+        recorder.TryRecord(KeyLogEntry.FromKeyEvent(KeyEventKind.KeyUp, e, DateTime.Now));
+    }
+
+    private void MainForm_KeyPress(object? sender, KeyPressEventArgs e)
+    {
+        recorder.TryRecord(KeyLogEntry.FromKeyPress(e, DateTime.Now));
+    }
+
+    private void BindKindCheck(CheckBox check, KeyEventKind kind)
+    {
+        check.CheckedChanged += (_, _) =>
+        {
+            recorder.SetKindEnabled(kind, check.Checked);
+            FocusInput();
+        };
     }
 
     private void Recorder_EntryAdded(object? sender, KeyLogEntry entry)
@@ -134,6 +175,11 @@ public class MainForm : Form
     private void FocusInput()
     {
         inputBox.Focus();
+    }
+
+    private static CheckBox CreateKindCheck(string text)
+    {
+        return new CheckBox { Text = text, AutoSize = true, Margin = new Padding(3, 4, 12, 3) };
     }
 
     private static Button CreateButton(string text)

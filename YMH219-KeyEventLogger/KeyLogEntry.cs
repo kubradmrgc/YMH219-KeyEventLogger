@@ -30,6 +30,11 @@ public sealed class KeyLogEntry
         return new KeyLogEntry(timestamp, kind, DescribeKey(e.KeyCode), DescribeModifiers(e.KeyCode, e.Modifiers));
     }
 
+    public static KeyLogEntry FromKeyPress(KeyPressEventArgs e, DateTime timestamp)
+    {
+        return new KeyLogEntry(timestamp, KeyEventKind.KeyPress, DescribeChar(e.KeyChar));
+    }
+
     public override string ToString()
     {
         string text = $"{Timestamp:yyyy-MM-dd HH:mm:ss.fff}  {Kind,-8}  {KeyName}";
@@ -51,6 +56,20 @@ public sealed class KeyLogEntry
             Keys.PageDown => "PageDown",
             Keys.Escape => "Esc",
             _ => key.ToString()
+        };
+    }
+
+    private static string DescribeChar(char c)
+    {
+        return c switch
+        {
+            ' ' => "Space",
+            '\r' => "Enter",
+            '\b' => "Backspace",
+            '\t' => "Tab",
+            '\u001b' => "Esc",
+            _ when char.IsControl(c) => $"Kontrol karakteri 0x{(int)c:X2}",
+            _ => $"'{c}'"
         };
     }
 

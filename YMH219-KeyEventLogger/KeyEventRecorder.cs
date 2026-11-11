@@ -6,6 +6,7 @@ namespace KeyEventLogger;
 public class KeyEventRecorder
 {
     private readonly List<KeyLogEntry> entries = new();
+    private readonly HashSet<KeyEventKind> enabledKinds = new() { KeyEventKind.KeyDown };
 
     public event EventHandler<KeyLogEntry>? EntryAdded;
     public event EventHandler? EntriesCleared;
@@ -24,9 +25,26 @@ public class KeyEventRecorder
         SetRecording(false);
     }
 
+    public bool IsKindEnabled(KeyEventKind kind)
+    {
+        return enabledKinds.Contains(kind);
+    }
+
+    public void SetKindEnabled(KeyEventKind kind, bool enabled)
+    {
+        if (enabled)
+        {
+            enabledKinds.Add(kind);
+        }
+        else
+        {
+            enabledKinds.Remove(kind);
+        }
+    }
+
     public bool TryRecord(KeyLogEntry entry)
     {
-        if (!IsRecording)
+        if (!IsRecording || !IsKindEnabled(entry.Kind))
         {
             return false;
         }
