@@ -75,6 +75,21 @@ public class MainForm : Form
         Controls.Add(inputGroup);
         Controls.Add(toolbar);
         Controls.Add(statusStrip);
+
+        KeyDown += MainForm_KeyDown;
+        Shown += (_, _) => inputBox.Focus();
+    }
+
+    private void MainForm_KeyDown(object? sender, KeyEventArgs e)
+    {
+        AddEntry(KeyLogEntry.FromKeyEvent(KeyEventKind.KeyDown, e, DateTime.Now));
+    }
+
+    private void AddEntry(KeyLogEntry entry)
+    {
+        logList.Items.Add(entry);
+        logList.TopIndex = logList.Items.Count - 1;
+        countLabel.Text = $"Kayıt: {logList.Items.Count}";
     }
 
     private static Button CreateButton(string text)
