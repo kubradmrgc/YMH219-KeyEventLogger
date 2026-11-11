@@ -99,6 +99,7 @@ public class MainForm : Form
         startButton.Click += (_, _) => { recorder.Start(); FocusInput(); };
         stopButton.Click += (_, _) => { recorder.Stop(); FocusInput(); };
         clearButton.Click += (_, _) => { recorder.Clear(); FocusInput(); };
+        saveButton.Click += (_, _) => { SaveEntries(); FocusInput(); };
         BindKindCheck(keyDownCheck, KeyEventKind.KeyDown);
         BindKindCheck(keyUpCheck, KeyEventKind.KeyUp);
         BindKindCheck(keyPressCheck, KeyEventKind.KeyPress);
@@ -132,6 +133,41 @@ public class MainForm : Form
     private void MainForm_KeyPress(object? sender, KeyPressEventArgs e)
     {
         recorder.TryRecord(KeyLogEntry.FromKeyPress(e, DateTime.Now));
+    }
+
+    private void SaveEntries()
+    {
+        IReadOnlyCollection<KeyLogEntry> entries = recorder.Entries;
+        if (entries.Count == 0)
+        {
+            MessageBox.Show(this, "Kaydedilecek kayıt yok.", "Bilgi", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            return;
+        }
+
+        using var dialog = new SaveFileDialog
+        {
+            Title = "Kayıtları kaydet",
+            Filter = "Metin dosyası (*.txt)|*.txt",
+            DefaultExt = "txt",
+            AddExtension = true,
+            FileName = LogFileWriter.SuggestFileName(DateTime.Now)
+        };
+        if (dialog.ShowDialog(this) != DialogResult.OK)
+        {
+            return;
+        }
+
+        try
+        {
+            LogFileWriter.Save(dialog.FileName, entries);
+            MessageBox.Show(this, $"{entries.Count} kayıt kaydedildi:\n{dialog.FileName}", "Kaydedildi",
+                MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            MessageBox.Show(this, $"Dosya kaydedilemedi:\n{ex.Message}", "Hata",
+                MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
     }
 
     private void BindKindCheck(CheckBox check, KeyEventKind kind)
