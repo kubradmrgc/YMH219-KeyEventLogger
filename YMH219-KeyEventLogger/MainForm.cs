@@ -33,6 +33,14 @@ public class MainForm : Form
         IntegralHeight = false,
         HorizontalScrollbar = true
     };
+    private readonly Label totalEventsLabel = CreateStatLabel();
+    private readonly Label totalKeysLabel = CreateStatLabel();
+    private readonly ListBox topKeysList = new()
+    {
+        Dock = DockStyle.Fill,
+        Font = new Font("Consolas", 10f),
+        IntegralHeight = false
+    };
     private readonly TextBox inputBox = new()
     {
         Dock = DockStyle.Fill,
@@ -79,6 +87,16 @@ public class MainForm : Form
         var logGroup = new GroupBox { Text = "Kayıtlar", Dock = DockStyle.Fill, Padding = new Padding(8) };
         logGroup.Controls.Add(logList);
 
+        var statsGroup = new GroupBox { Text = "İstatistik", Dock = DockStyle.Top, Height = 230, Padding = new Padding(8) };
+        var topKeysTitle = new Label { Text = "En sık basılan 5 tuş:", Dock = DockStyle.Top, Height = 24, TextAlign = ContentAlignment.BottomLeft };
+        statsGroup.Controls.Add(topKeysList);
+        statsGroup.Controls.Add(topKeysTitle);
+        statsGroup.Controls.Add(totalKeysLabel);
+        statsGroup.Controls.Add(totalEventsLabel);
+
+        var sidePanel = new Panel { Dock = DockStyle.Right, Width = 270, Padding = new Padding(0, 0, 8, 0) };
+        sidePanel.Controls.Add(statsGroup);
+
         var inputGroup = new GroupBox
         {
             Text = "Deneme alanı - tuşlar yalnızca bu pencere aktifken yakalanır",
@@ -91,6 +109,7 @@ public class MainForm : Form
         statusStrip.Items.AddRange(new ToolStripItem[] { focusLabel, countLabel });
 
         Controls.Add(logGroup);
+        Controls.Add(sidePanel);
         Controls.Add(inputGroup);
         Controls.Add(optionsBar);
         Controls.Add(toolbar);
@@ -105,7 +124,7 @@ public class MainForm : Form
         BindKindCheck(keyPressCheck, KeyEventKind.KeyPress);
 
         recorder.EntryAdded += Recorder_EntryAdded;
-        recorder.EntriesCleared += (_, _) => { logList.Items.Clear(); UpdateCount(); };
+        recorder.EntriesCleared += (_, _) => { logList.Items.Clear(); UpdateCount(); UpdateStatistics(); };
         recorder.RecordingChanged += (_, _) => UpdateRecordingState();
 
         KeyDown += MainForm_KeyDown;
@@ -118,6 +137,7 @@ public class MainForm : Form
         UpdateRecordingState();
         UpdateFocusState(false);
         UpdateCount();
+        UpdateStatistics();
     }
 
     private void MainForm_KeyDown(object? sender, KeyEventArgs e)
@@ -184,6 +204,23 @@ public class MainForm : Form
         logList.Items.Add(entry);
         logList.TopIndex = logList.Items.Count - 1;
         UpdateCount();
+        UpdateStatistics();
+    }
+
+    private void UpdateStatistics()
+    {
+        KeyStatistics stats = KeyStatistics.Calculate(recorder.Entries);
+        totalEventsLabel.Text = $"Toplam olay: {stats.TotalEvents}";
+        totalKeysLabel.Text = $"Basılan tuş (KeyDown): {stats.TotalKeyPresses}";
+
+        topKeysList.BeginUpdate();
+        topKeysList.Items.Clear();
+        foreach (KeyCount key in stats.TopKeys)
+        {
+            topKeysList.Items.Add($"{key.KeyName,-12} {key.Count,5}");
+        }
+
+        topKeysList.EndUpdate();
     }
 
     private void UpdateRecordingState()
@@ -211,6 +248,11 @@ public class MainForm : Form
     private void FocusInput()
     {
         inputBox.Focus();
+    }
+
+    private static Label CreateStatLabel()
+    {
+        return new Label { Dock = DockStyle.Top, Height = 26, TextAlign = ContentAlignment.MiddleLeft };
     }
 
     private static CheckBox CreateKindCheck(string text)
