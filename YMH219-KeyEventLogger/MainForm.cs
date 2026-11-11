@@ -2,9 +2,14 @@ namespace KeyEventLogger;
 
 /// <summary>
 /// Ana pencere: kayıt kontrolleri, olay listesi ve tuşların deneneceği yazı alanı.
+/// Tuşlar yalnızca bu pencere aktifken, formun KeyPreview özelliği ile yakalanır.
 /// </summary>
 public class MainForm : Form
 {
+    private const string BaseTitle = "YMH219 - Key Event Logger";
+
+    private readonly KeyEventRecorder recorder = new();
+
     private readonly Button startButton = CreateButton("Başlat");
     private readonly Button stopButton = CreateButton("Durdur");
     private readonly Button clearButton = CreateButton("Temizle");
@@ -16,8 +21,6 @@ public class MainForm : Form
         TextAlign = ContentAlignment.MiddleCenter,
         Font = new Font("Segoe UI", 10f, FontStyle.Bold),
         ForeColor = Color.White,
-        BackColor = Color.DimGray,
-        Text = "■ KAYIT KAPALI",
         Margin = new Padding(16, 3, 3, 3)
     };
     private readonly ListBox logList = new()
@@ -37,12 +40,12 @@ public class MainForm : Form
         Font = new Font("Segoe UI", 11f)
     };
     private readonly StatusStrip statusStrip = new();
-    private readonly ToolStripStatusLabel focusLabel = new() { Spring = true, TextAlign = ContentAlignment.MiddleLeft, Text = "Hazır" };
-    private readonly ToolStripStatusLabel countLabel = new() { Text = "Kayıt: 0" };
+    private readonly ToolStripStatusLabel focusLabel = new() { Spring = true, TextAlign = ContentAlignment.MiddleLeft };
+    private readonly ToolStripStatusLabel countLabel = new();
 
     public MainForm()
     {
-        Text = "YMH219 - Key Event Logger";
+        Text = BaseTitle;
         ClientSize = new Size(900, 600);
         MinimumSize = new Size(760, 480);
         StartPosition = FormStartPosition.CenterScreen;
@@ -76,20 +79,61 @@ public class MainForm : Form
         Controls.Add(toolbar);
         Controls.Add(statusStrip);
 
+        startButton.Click += (_, _) => { recorder.Start(); FocusInput(); };
+        stopButton.Click += (_, _) => { recorder.Stop(); FocusInput(); };
+        clearButton.Click += (_, _) => { recorder.Clear(); FocusInput(); };
+
+        recorder.EntryAdded += Recorder_EntryAdded;
+        recorder.EntriesCleared += (_, _) => { logList.Items.Clear(); UpdateCount(); };
+        recorder.RecordingChanged += (_, _) => UpdateRecordingState();
+
         KeyDown += MainForm_KeyDown;
-        Shown += (_, _) => inputBox.Focus();
+        Activated += (_, _) => UpdateFocusState(true);
+        Deactivate += (_, _) => UpdateFocusState(false);
+        Shown += (_, _) => FocusInput();
+
+        UpdateRecordingState();
+        UpdateFocusState(false);
+        UpdateCount();
     }
 
     private void MainForm_KeyDown(object? sender, KeyEventArgs e)
     {
-        AddEntry(KeyLogEntry.FromKeyEvent(KeyEventKind.KeyDown, e, DateTime.Now));
+        recorder.TryRecord(KeyLogEntry.FromKeyEvent(KeyEventKind.KeyDown, e, DateTime.Now));
     }
 
-    private void AddEntry(KeyLogEntry entry)
+    private void Recorder_EntryAdded(object? sender, KeyLogEntry entry)
     {
         logList.Items.Add(entry);
         logList.TopIndex = logList.Items.Count - 1;
-        countLabel.Text = $"Kayıt: {logList.Items.Count}";
+        UpdateCount();
+    }
+
+    private void UpdateRecordingState()
+    {
+        bool recording = recorder.IsRecording;
+        startButton.Enabled = !recording;
+        stopButton.Enabled = recording;
+        recordingIndicator.Text = recording ? "● KAYIT AÇIK" : "■ KAYIT KAPALI";
+        recordingIndicator.BackColor = recording ? Color.FromArgb(220, 38, 38) : Color.DimGray;
+        Text = recording ? $"{BaseTitle} [KAYIT AÇIK]" : BaseTitle;
+    }
+
+    private void UpdateFocusState(bool active)
+    {
+        focusLabel.Text = active
+            ? "Pencere aktif - tuşlar yakalanabilir"
+            : "Pencere aktif değil - tuşlar yakalanmıyor";
+    }
+
+    private void UpdateCount()
+    {
+        countLabel.Text = $"Kayıt: {recorder.Entries.Count}";
+    }
+
+    private void FocusInput()
+    {
+        inputBox.Focus();
     }
 
     private static Button CreateButton(string text)
