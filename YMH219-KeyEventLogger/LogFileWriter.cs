@@ -2,9 +2,6 @@ using System.Text;
 
 namespace KeyEventLogger;
 
-/// <summary>
-/// Kayıtları StreamWriter ile yerel bir metin dosyasına yazar.
-/// </summary>
 public static class LogFileWriter
 {
     public static void Save(string path, IReadOnlyCollection<KeyLogEntry> entries)

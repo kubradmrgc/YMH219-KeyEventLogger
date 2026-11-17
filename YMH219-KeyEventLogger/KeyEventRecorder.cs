@@ -1,8 +1,5 @@
 namespace KeyEventLogger;
 
-/// <summary>
-/// Kayıt durumunu ve yakalanan olayları yönetir. Kayıt kapalıyken gelen olaylar yok sayılır.
-/// </summary>
 public class KeyEventRecorder
 {
     private readonly List<KeyLogEntry> entries = new();

@@ -7,9 +7,6 @@ public enum KeyEventKind
     KeyPress
 }
 
-/// <summary>
-/// Tek bir klavye olayının zaman, olay türü ve tuş bilgisini tutan kayıt.
-/// </summary>
 public sealed class KeyLogEntry
 {
     public KeyLogEntry(DateTime timestamp, KeyEventKind kind, string keyName, string modifiers = "")

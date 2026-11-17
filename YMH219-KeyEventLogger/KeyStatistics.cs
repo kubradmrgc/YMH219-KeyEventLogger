@@ -2,10 +2,6 @@ namespace KeyEventLogger;
 
 public readonly record struct KeyCount(string KeyName, int Count);
 
-/// <summary>
-/// Kayıtlardan toplam olay sayısını, basılan tuş sayısını ve en sık basılan tuşları hesaplar.
-/// Tuş sayımı KeyDown olaylarına göre yapılır.
-/// </summary>
 public sealed class KeyStatistics
 {
     private KeyStatistics(int totalEvents, int totalKeyPresses, IReadOnlyList<KeyCount> topKeys)

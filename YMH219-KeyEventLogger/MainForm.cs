@@ -1,9 +1,5 @@
 namespace KeyEventLogger;
 
-/// <summary>
-/// Ana pencere: kayıt kontrolleri, olay listesi ve tuşların deneneceği yazı alanı.
-/// Tuşlar yalnızca bu pencere aktifken, formun KeyPreview özelliği ile yakalanır.
-/// </summary>
 public class MainForm : Form
 {
     private const string BaseTitle = "YMH219 - Key Event Logger";

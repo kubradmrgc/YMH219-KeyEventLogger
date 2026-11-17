@@ -1,8 +1,5 @@
 namespace KeyEventLogger;
 
-/// <summary>
-/// Kayıtları başlangıç ve bitiş zamanı arasında (iki uç dahil) süzer.
-/// </summary>
 public sealed class KeyLogFilter
 {
     public KeyLogFilter(DateTime from, DateTime to)
@@ -19,9 +16,6 @@ public sealed class KeyLogFilter
     public DateTime From { get; }
     public DateTime To { get; }
 
-    /// <summary>
-    /// Saniye hassasiyetindeki seçimden filtre oluşturur; bitiş saniyesinin tamamı aralığa dahil edilir.
-    /// </summary>
     public static KeyLogFilter FromSeconds(DateTime from, DateTime to)
     {
         DateTime start = TruncateToSecond(from);
